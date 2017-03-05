@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Декларатор - обзор</title>
+    
+    <style>
+        body {
+            font-family: sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            width: 950px;
+            margin: 0 auto;
+            padding: 30px 0;
+        }
+        
+        h2 {
+            text-align: center;
+            font-size: 1.9em;
+            margin: 2em 0 1.5em;
+        }
+        
+        .bar {
+            fill: #01579b;
+        }
+        
+        .line {
+            fill: none;
+            stroke: #0d47a1;
+            stroke-width: 2px;
+        }
+        
+        .line2 {
+            fill: none;
+            stroke: #e91e63;
+            stroke-width: 2px;
+        }
+        
+        .toolTip {
+            position: absolute;
+            display: none;
+            min-width: 80px;
+            height: auto;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            padding: 4px;
+            text-align: center;
+            border-radius: 2px;
+            font-size: 12px;
+            box-shadow: 1px 1px 3px rgba(100,100, 100, 0.5);
+        }
+        
+        
+    </style>
+    <script src="http://d3js.org/d3.v4.min.js"></script>
+    
+</head>
+
+<body>
+<div class="container">
+<h2>Деклараций в базе</h2>
+<div id="one"></div>
+<h2>Доход, млн.руб</h2>
+<div id="two"></div>
+<h2>Медианный доход, тыс.руб</h2>
+<div id="three"></div>
+</div>
+<script>
+var margins = { top: 20, right: 70, bottom: 30, left: 70};
+
+//chart one
+var cOne = {
+        margin : { top: margins.top, right: margins.right, bottom: margins.bottom, left: margins.left},
+        width : 950 -margins.left - margins.right,
+        height : 500 - margins.top - margins.bottom
+    };
+
+
+// set the ranges
+cOne.x = d3.scaleBand()
+          .range([0, cOne.width])
+          .padding(0.1);
+cOne.y = d3.scaleLinear()
+          .range([cOne.height, 0]);
+          
+// append the svg object to the body of the page
+// append a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+cOne.svg = d3.select("#one").append("svg")
+    .attr("width", cOne.width + cOne.margin.left + cOne.margin.right)
+    .attr("height", cOne.height + cOne.margin.top + cOne.margin.bottom)
+    .append("g")
+    .attr("transform", 
+          "translate(" + cOne.margin.left + "," + cOne.margin.top + ")");
+
+var tooltip = d3.select("body").append("div").attr("class", "toolTip");
+          
+//chart three
+var cThree = {
+        margin : { top: margins.top, right: margins.right, bottom: margins.bottom, left: margins.left},
+        width : 950 -margins.left - margins.right,
+        height : 500 - margins.top - margins.bottom
+    };
+
+
+// set the ranges
+cThree.x = d3.scaleBand()
+          .range([0, cThree.width])
+          .padding(0.1);
+cThree.y = d3.scaleLinear()
+          .range([cThree.height, 0]);
+          
+// append the svg object to the body of the page
+// append a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+cThree.svg = d3.select("#three").append("svg")
+    .attr("width", cThree.width + cThree.margin.left + cThree.margin.right)
+    .attr("height", cThree.height + cThree.margin.top + cThree.margin.bottom)
+    .append("g")
+    .attr("transform", 
+          "translate(" + cThree.margin.left + "," + cThree.margin.top + ")");  
+
+// define the  line
+cThree.valueline = d3.line()
+    .curve(d3.curveBasis)
+    .x(function(d) { return cThree.x(d.year) + (cThree.x.bandwidth()/2); })
+    .y(function(d) { return cThree.y(d.median); });
+
+
+//chart two      
+var cTwo = {
+    margin : { top: margins.top, right: margins.right, bottom: margins.bottom, left: margins.left},
+    width : 900 -margins.left - margins.right,
+    height : 500 - margins.top - margins.bottom
+};
+    
+
+// set the ranges  
+cTwo.x = d3.scaleBand()
+        .range([0, cTwo.width])
+        .padding(0.1);
+
+cTwo.y0 = d3.scaleLinear().range([cTwo.height, 0]);
+cTwo.y1 = d3.scaleLinear().range([cTwo.height, 0]);
+
+
+// define the 1st line
+cTwo.valueline = d3.line()
+    .x(function(d) { return cTwo.x(d.year) + (cTwo.x.bandwidth()/2); })
+    .y(function(d) { return cTwo.y0(d.rur); });
+
+// define the 2nd line
+cTwo.valueline2 = d3.line()
+    .curve(d3.curveBasis)
+    .x(function(d) { return cTwo.x(d.year) + (cTwo.x.bandwidth()/2); })
+    .y(function(d) { return cTwo.y1(d.average); });
+
+// append the svg obgect to the body of the page
+// appends a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+cTwo.svg = d3.select("#two").append("svg")
+    .attr("width", cTwo.width + cTwo.margin.left + cTwo.margin.right)
+    .attr("height", cTwo.height + cTwo.margin.top + cTwo.margin.bottom)
+    .append("g")
+    .attr("transform",
+          "translate(" + cTwo.margin.left + "," + cTwo.margin.top + ")");
+
+
+      
+var g = cTwo.svg.append("g")
+    .attr("transform", "translate(" + cTwo.margin.left + "," + cTwo.margin.top + ")");
+    
+// get the data
+d3.csv("totalbyyear.csv", function(error, data) {
+    if (error) throw error;
+    
+    // format the data
+    data.forEach(function(d) {
+        d.doc = +d.doc;
+        d.rur = +d.rur;
+        d.average = +d.average;
+        d.median = +d.median;
+    });
+    
+    //Chart one
+    // Scale the range of the data in the domains
+    cOne.x.domain(data.map(function(d) { return d.year; }));
+    cOne.y.domain([0, d3.max(data, function(d) { return d.doc; })]);
+    
+    // append the rectangles for the bar chart
+    cOne.svg.selectAll(".bar")
+        .data(data)
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", function(d) { return cOne.x(d.year); })
+        .attr("width", cOne.x.bandwidth())
+        .attr("y", function(d) { return cOne.y(d.doc); })
+        .attr("height", function(d) { return cOne.height - cOne.y(d.doc); })
+        .on("mousemove", function(d){
+            tooltip
+              .style("left", d3.event.pageX - 50 + "px")
+              .style("top", d3.event.pageY - 70 + "px")
+              .style("display", "inline-block")
+              .html((d.doc));
+        })
+    	.on("mouseout", function(d){ tooltip.style("display", "none");});
+    
+    // add the x Axis
+    cOne.svg.append("g")
+        .attr("transform", "translate(0," + cOne.height + ")")
+        .call(d3.axisBottom(cOne.x));
+    
+    // add the y Axis
+    cOne.svg.append("g")
+        .call(d3.axisLeft(cOne.y));
+        
+    cOne.svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - cOne.margin.left)
+      .attr("x",0 - (cOne.height / 2))
+      .attr("dy", "0.9em")
+      .style("text-anchor", "middle")
+      .style("font-size", "15px")
+      .style("font-weight", "bold")
+      .text("кол-во"); 
+        
+    
+    //Chart two
+    
+    // Scale the range of the data
+    cTwo.x.domain(data.map(function(d) { return d.year; }));
+    cTwo.y0.domain([0, d3.max(data, function(d) { return d.rur; })]);
+    cTwo.y1.domain([0, d3.max(data, function(d) { return d.average; })]);
+    
+    // Add the valueline path.
+    cTwo.svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .attr("d", cTwo.valueline);
+    
+    cTwo.svg.append("path")
+      .data([data])
+      .attr("class", "line2")
+      .attr("d", cTwo.valueline2);
+    
+    
+    // Add the X Axis
+    cTwo.svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(0," + cTwo.height + ")")
+      .call(d3.axisBottom(cTwo.x));
+    
+    // Add the Y0 Axis
+    cTwo.svg.append("g")
+      .attr("class", "axisO")
+      .call(d3.axisLeft(cTwo.y0));
+      
+    cTwo.svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - cTwo.margin.left)
+      .attr("x",0 - (cTwo.height / 2))
+      .attr("dy", "0.9em")
+      .style("text-anchor", "middle")
+      .style("font-size", "15px")
+      .style("font-weight", "bold")
+      .text("совокупный доход, млн.руб"); 
+    
+    // Add the Y1 Axis
+    cTwo.svg.append("g")
+      .attr("class", "axis1")
+      .attr("transform", "translate( " + cTwo.width + ", 0 )")
+      .call(d3.axisRight(cTwo.y1));
+    
+    cTwo.svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 + cTwo.width + 40)
+      .attr("x",0 - (cTwo.height / 2))
+      .attr("dy", "0.9em")
+      .style("text-anchor", "middle")
+      .style("font-size", "15px")
+      .style("font-weight", "bold")
+      .text("средний доход, млн.руб"); 
+      
+      
+      
+    //legend
+    cTwo.svg.append("text")
+    .attr("transform", "translate("+(cTwo.width-100)+","+(cTwo.y0(data[9].rur)+10)+")")
+    .attr("dy", ".2em")
+    .attr("text-anchor", "start")
+    .style("fill", "#0d47a1")
+    .style("font-size","12px")
+    .text("Совокупный");
+    
+    cTwo.svg.append("text")
+    .attr("transform", "translate("+(cTwo.width-100)+","+(cTwo.y0(data[9].average)-50)+")")
+    .attr("dy", ".2em")
+    .attr("text-anchor", "start")
+    .style("fill", "#e91e63")
+    .style("font-size","12px")
+    .text("Средний");
+    
+
+
+    
+    //three
+    // Scale the range of the data
+    cThree.x.domain(data.map(function(d) { return d.year; }));
+    cThree.y.domain([0, d3.max(data, function(d) { return d.median; })]);
+    
+    
+    // Add the valueline path.
+    cThree.svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .attr("d", cThree.valueline);
+      
+    // Add the X Axis
+    cThree.svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(0," + cThree.height + ")")
+      .call(d3.axisBottom(cThree.x));
+    
+    // Add the Y0 Axis
+    cThree.svg.append("g")
+      .attr("class", "axisO")
+      .call(d3.axisLeft(cThree.y));
+    
+    cThree.svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - cThree.margin.left)
+      .attr("x",0 - (cThree.height / 2))
+      .attr("dy", "0.9em")
+      .style("text-anchor", "middle")
+      .style("font-size", "15px")
+      .style("font-weight", "bold")
+      .text("медианный доход, тыс.руб");
+});
+
+</script>    
+
+
+</body>
+</html>
